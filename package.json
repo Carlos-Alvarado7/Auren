@@ -1,0 +1,15 @@
+{
+  "name": "auren-digital-menu",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "Angular",
+    "backend"
+  ],
+  "scripts": {
+    "build": "bun run --cwd Angular build && bun run --cwd backend build",
+    "test": "bun run --cwd backend test && bun test Angular/src/app/core/format-cop.util.spec.ts",
+    "typecheck": "bun run --cwd backend typecheck && bun run --cwd Angular typecheck",
+    "lint": "bun run --cwd Angular lint"
+  }
+}

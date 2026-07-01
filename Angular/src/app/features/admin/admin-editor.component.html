@@ -1,0 +1,263 @@
+<main class="admin-page">
+  <section class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="brand-card">
+        <div class="brand-mark" aria-hidden="true">
+          <span>A</span>
+        </div>
+        <div class="brand-word">
+          <strong>Auren</strong>
+          <span>Gastronomy</span>
+        </div>
+      </div>
+
+      <section class="sidebar-section">
+        <p>General</p>
+        <button class="nav-row" type="button" [class.active]="productCategoryFilterId !== 'all'" [attr.aria-pressed]="productCategoryFilterId !== 'all'">
+          <span class="nav-icon" aria-hidden="true"></span>
+          Productos
+        </button>
+        <button class="nav-row" type="button" [class.active]="productCategoryFilterId === 'all'" [attr.aria-pressed]="productCategoryFilterId === 'all'" (click)="clearProductFilters()">
+          <span class="nav-icon" aria-hidden="true"></span>
+          Todas las categorias
+        </button>
+      </section>
+
+      <section class="sidebar-section category-section">
+        <div class="section-heading">
+          <p>Categorias</p>
+          <button class="ghost-button" type="button" (click)="newCategory()">Nueva</button>
+        </div>
+
+        <button
+          class="category-row"
+          type="button"
+          *ngFor="let category of categories; trackBy: trackById"
+          [class.active]="category.id === selectedCategoryId"
+          (click)="selectCategory(category)"
+        >
+          <span>{{ category.title }}</span>
+          <small>{{ category.products.length }} productos</small>
+        </button>
+      </section>
+
+      <form class="category-form" (ngSubmit)="saveCategory()" #categoryNgForm="ngForm">
+        <label>
+          Nombre de categoria
+          <input name="categoryTitle" [(ngModel)]="categoryForm.title" required maxlength="100">
+        </label>
+        <label>
+          Icono interno
+          <input name="categoryIcon" [(ngModel)]="categoryForm.icon" maxlength="60">
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="categoryVisible" [(ngModel)]="categoryForm.visible">
+          <span>Visible para clientes</span>
+        </label>
+        <div class="button-row">
+          <button class="panel-button" type="submit" [disabled]="saving || categoryNgForm.invalid">
+            {{ categoryForm.id ? 'Guardar' : 'Crear' }}
+          </button>
+          <button class="panel-button secondary" type="button" *ngIf="categoryForm.id" (click)="newCategory()">Limpiar</button>
+        </div>
+      </form>
+
+      <div class="admin-account">
+        <span class="account-avatar" aria-hidden="true">A</span>
+        <div>
+          <strong>Admin Auren</strong>
+          <small>admin&#64;auren.local</small>
+        </div>
+      </div>
+    </aside>
+
+    <section class="admin-main">
+      <header class="admin-hero">
+        <div>
+          <h1>Editor de Menu</h1>
+          <p>Administra categorias, productos y precios</p>
+        </div>
+        <div class="publish-tools">
+          <span class="publish-pill" [class.is-saving]="saving">
+            <i aria-hidden="true"></i>
+            {{ saving ? 'Guardando' : 'Publicado' }}
+          </span>
+          <button class="primary-action" type="button" (click)="publish()" [disabled]="saving || !menu">Publicar Cambios</button>
+          <small>Ultima publicacion: {{ publishedLabel() }}</small>
+        </div>
+      </header>
+
+      <section class="status-line" *ngIf="message || error || saving">
+        <span *ngIf="saving">Guardando cambios...</span>
+        <span class="success" *ngIf="message && !saving">{{ message }}</span>
+        <span class="error" *ngIf="error && !saving">{{ error }}</span>
+      </section>
+
+      <section class="loading" *ngIf="loading">Cargando editor...</section>
+
+      <ng-container *ngIf="!loading && menu">
+        <section class="identity-panel">
+          <label>
+            Nombre visible
+            <input [(ngModel)]="menu.draft.brandName" name="brandName" maxlength="120">
+          </label>
+          <label>
+            Subtitulo
+            <input [(ngModel)]="menu.draft.subtitle" name="subtitle" maxlength="120">
+          </label>
+          <button class="panel-button" type="button" (click)="saveMeta()" [disabled]="saving">Guardar identidad</button>
+        </section>
+
+        <section class="dashboard-grid">
+          <section class="products-panel">
+            <div class="table-toolbar">
+              <select [(ngModel)]="productCategoryFilterId" name="productCategoryFilter">
+                <option value="all">Todas las categorias</option>
+                <option *ngFor="let category of categories; trackBy: trackById" [value]="category.id">
+                  {{ category.title }}
+                </option>
+              </select>
+
+              <select [(ngModel)]="productStateFilter" name="productStateFilter">
+                <option value="all">Estado: Todos</option>
+                <option value="published">Publicado</option>
+                <option value="draft">Borrador</option>
+                <option value="unavailable">No disponible</option>
+              </select>
+
+              <label class="search-field" aria-label="Buscar producto">
+                <input [(ngModel)]="productSearch" name="productSearch" placeholder="Buscar producto...">
+              </label>
+
+              <button class="outline-action" type="button" (click)="newProduct()">Nuevo Producto</button>
+            </div>
+
+            <div class="category-command" *ngIf="selectedCategory as category">
+              <div>
+                <span>Categoria seleccionada</span>
+                <strong>{{ category.title }}</strong>
+              </div>
+              <div class="compact-actions">
+                <button class="panel-button secondary" type="button" (click)="moveCategory(category, -1)">Subir</button>
+                <button class="panel-button secondary" type="button" (click)="moveCategory(category, 1)">Bajar</button>
+                <button class="panel-button danger" type="button" (click)="deleteCategory(category)">Eliminar categoria</button>
+              </div>
+            </div>
+
+            <div class="product-table" role="table" aria-label="Productos de la carta">
+              <div class="table-row table-head" role="row">
+                <span>Orden</span>
+                <span>Producto</span>
+                <span>Categoria</span>
+                <span>Precio</span>
+                <span>Estado</span>
+                <span>Acciones</span>
+              </div>
+
+              <div
+                class="table-row product-row"
+                role="row"
+                *ngFor="let row of filteredProductRows; let index = index"
+                [class.selected]="productForm.id === row.product.id"
+              >
+                <span class="order-cell">{{ index + 1 }}</span>
+                <button class="product-cell" type="button" (click)="editProductFromRow(row)">
+                  <strong>{{ row.product.name }}</strong>
+                  <small>{{ row.product.description || 'Sin descripcion registrada' }}</small>
+                </button>
+                <span>{{ row.category.title }}</span>
+                <strong>{{ row.product.priceCop | copCurrency }}</strong>
+                <span class="state-chip" [ngClass]="productStateClass(row.product)">
+                  <i aria-hidden="true"></i>
+                  {{ productStateLabel(row.product) }}
+                </span>
+                <span class="row-actions">
+                  <button class="icon-action" type="button" (click)="moveProductFromRow(row, -1)">Subir</button>
+                  <button class="icon-action" type="button" (click)="moveProductFromRow(row, 1)">Bajar</button>
+                  <button class="icon-action danger" type="button" (click)="hideProductFromRow(row)" [disabled]="!row.product.visible">
+                    {{ row.product.visible ? 'Ocultar' : 'Oculto' }}
+                  </button>
+                </span>
+              </div>
+            </div>
+
+            <p class="empty" *ngIf="filteredProductRows.length === 0">No hay productos para los filtros actuales.</p>
+          </section>
+
+          <aside class="editor-panel">
+            <div class="panel-heading">
+              <div>
+                <span>Producto</span>
+                <h2>{{ productForm.id ? 'Editar Producto' : 'Nuevo Producto' }}</h2>
+              </div>
+              <button class="ghost-button" type="button" (click)="newProduct()">Nuevo</button>
+            </div>
+
+            <form class="product-form" (ngSubmit)="saveProduct()" #productNgForm="ngForm">
+              <label>
+                Nombre del producto
+                <input name="productName" [(ngModel)]="productForm.name" required maxlength="120">
+              </label>
+
+              <label>
+                Categoria
+                <select name="productCategory" [(ngModel)]="selectedCategoryId" [disabled]="!!productForm.id">
+                  <option *ngFor="let category of categories; trackBy: trackById" [value]="category.id">
+                    {{ category.title }}
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                Precio COP
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  name="productPrice"
+                  [ngModel]="productPriceText"
+                  (ngModelChange)="updateProductPrice($event)"
+                  required
+                >
+              </label>
+
+              <label>
+                Descripcion
+                <textarea name="productDescription" [(ngModel)]="productForm.description" maxlength="500" rows="5"></textarea>
+              </label>
+
+              <div class="field-group">
+                <span>Estado</span>
+                <label class="check-row">
+                  <input type="checkbox" name="productVisible" [(ngModel)]="productForm.visible">
+                  <span>Publicado</span>
+                </label>
+                <label class="check-row">
+                  <input type="checkbox" name="productAvailable" [(ngModel)]="productForm.available">
+                  <span>Disponible</span>
+                </label>
+              </div>
+
+              <div class="variants">
+                <div class="variants-title">
+                  <span>Variantes</span>
+                  <button class="ghost-button" type="button" (click)="addVariant()">Agregar</button>
+                </div>
+
+                <div class="variant-row" *ngFor="let variant of productForm.variants; let index = index">
+                  <input [name]="'variantName' + index" [(ngModel)]="variant.name" placeholder="Nombre">
+                  <input type="number" [name]="'variantPrice' + index" [(ngModel)]="variant.priceCop" min="0" placeholder="Precio">
+                  <button class="icon-action danger" type="button" (click)="removeVariant(index)">Quitar</button>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button class="panel-button secondary" type="button" (click)="newProduct()">Cancelar</button>
+                <button class="primary-action" type="submit" [disabled]="saving || productNgForm.invalid">Guardar Cambios</button>
+              </div>
+            </form>
+          </aside>
+        </section>
+      </ng-container>
+    </section>
+  </section>
+</main>

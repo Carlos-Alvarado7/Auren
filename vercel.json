@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "installCommand": "bun install",
+  "buildCommand": "bun run --cwd Angular build",
+  "outputDirectory": "Angular/dist/auren-menu/browser",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

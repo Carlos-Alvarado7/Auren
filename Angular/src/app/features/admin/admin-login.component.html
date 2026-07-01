@@ -1,0 +1,26 @@
+<main class="login-page">
+  <section class="login-panel">
+    <div class="brand-mark">Á</div>
+    <p>Áuren Gastronomy</p>
+    <h1>Administrador de carta</h1>
+
+    <form (ngSubmit)="submit()" #loginForm="ngForm" novalidate>
+      <label>
+        Correo
+        <input type="email" name="email" [(ngModel)]="email" autocomplete="username" required maxlength="180">
+      </label>
+
+      <label>
+        Contraseña
+        <input type="password" name="password" [(ngModel)]="password" autocomplete="current-password" required minlength="8" maxlength="120">
+      </label>
+
+      <button type="submit" [disabled]="loading || loginForm.invalid">
+        {{ loading ? 'Ingresando...' : 'Ingresar' }}
+      </button>
+
+      <span class="error" *ngIf="error">{{ error }}</span>
+    </form>
+  </section>
+</main>
+
