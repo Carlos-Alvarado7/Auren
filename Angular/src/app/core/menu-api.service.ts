@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { catchError, concat, EMPTY, map, Observable, of, tap } from 'rxjs';
 import { API_BASE_URL, PUBLIC_MENU_SLUG } from './api.tokens';
 import {
   AdminMenu,
@@ -11,12 +11,30 @@ import {
 } from './menu.models';
 import { normalizeAdminMenu, normalizePublicMenu } from './normalize-menu';
 
+const PUBLIC_MENU_CACHE_PREFIX = 'auren.public-menu.';
+const PUBLIC_MENU_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+interface PublicMenuCacheEntry {
+  savedAt: number;
+  menu: PublicMenu;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MenuApiService {
   constructor(private readonly http: HttpClient) {}
 
   getPublicMenu(slug = PUBLIC_MENU_SLUG): Observable<PublicMenu> {
-    return this.http.get<PublicMenu>(`${API_BASE_URL}/menu/${slug}`).pipe(map(normalizePublicMenu));
+    const cachedMenu = this.getCachedPublicMenu(slug);
+    const remoteMenu$ = this.http.get<PublicMenu>(`${API_BASE_URL}/menu/${slug}`).pipe(
+      map(normalizePublicMenu),
+      tap((menu) => this.cachePublicMenu(slug, menu))
+    );
+
+    if (!cachedMenu) {
+      return remoteMenu$;
+    }
+
+    return concat(of(cachedMenu), remoteMenu$.pipe(catchError(() => EMPTY)));
   }
 
   getAdminMenu(): Observable<AdminMenu> {
@@ -72,5 +90,39 @@ export class MenuApiService {
   publish(): Observable<AdminMenu> {
     return this.http.post<AdminMenu>(`${API_BASE_URL}/admin/menu/publish`, {}).pipe(map(normalizeAdminMenu));
   }
-}
 
+  private getCachedPublicMenu(slug: string): PublicMenu | null {
+    try {
+      const rawEntry = localStorage.getItem(this.getPublicMenuCacheKey(slug));
+      if (!rawEntry) {
+        return null;
+      }
+
+      const entry = JSON.parse(rawEntry) as PublicMenuCacheEntry;
+      if (!entry.menu || Date.now() - entry.savedAt > PUBLIC_MENU_CACHE_TTL_MS) {
+        localStorage.removeItem(this.getPublicMenuCacheKey(slug));
+        return null;
+      }
+
+      return normalizePublicMenu(entry.menu);
+    } catch {
+      return null;
+    }
+  }
+
+  private cachePublicMenu(slug: string, menu: PublicMenu): void {
+    try {
+      const entry: PublicMenuCacheEntry = {
+        savedAt: Date.now(),
+        menu
+      };
+      localStorage.setItem(this.getPublicMenuCacheKey(slug), JSON.stringify(entry));
+    } catch {
+      // Storage can fail in private mode or when quota is exceeded; the network path still works.
+    }
+  }
+
+  private getPublicMenuCacheKey(slug: string): string {
+    return `${PUBLIC_MENU_CACHE_PREFIX}${slug}`;
+  }
+}

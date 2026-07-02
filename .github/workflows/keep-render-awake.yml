@@ -1,0 +1,23 @@
+name: Keep Render Backend Awake
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Colombia is UTC-5. This runs every 10 minutes from 4:00 PM to 12:50 AM Colombia.
+    - cron: '*/10 21-23 * * *'
+    - cron: '*/10 0-5 * * *'
+    # Final ping at 1:00 AM Colombia.
+    - cron: '0 6 * * *'
+
+jobs:
+  ping-backend:
+    name: Ping public menu endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Request public menu
+        run: |
+          curl --fail --silent --show-error --max-time 20 --retry 2 \
+            https://auren-7v7l.onrender.com/api/menu/auren \
+            > /dev/null
