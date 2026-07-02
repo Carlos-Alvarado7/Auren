@@ -89,49 +89,19 @@
 .brand-card {
   display: grid;
   justify-items: center;
-  gap: 10px;
-  padding: 6px 0 18px;
+  padding: 0 0 18px;
   border-bottom: 1px solid var(--admin-border-soft);
   text-align: center;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 74px;
-  height: 74px;
-  border: 1px solid var(--admin-gold);
-  border-radius: 50%;
-  color: transparent;
-  background: linear-gradient(180deg, #fff1bd, #d8992d 55%, #875719);
-  background-clip: text;
-  -webkit-background-clip: text;
-  box-shadow: 0 0 28px rgba(217, 154, 45, 0.12);
-}
-
-.brand-mark span {
-  font-family: var(--font-display);
-  font-size: 52px;
-  line-height: 1;
-}
-
-.brand-word {
-  display: grid;
-  gap: 4px;
-  color: var(--admin-gold-bright);
-  font-family: var(--font-display);
-  text-transform: uppercase;
-}
-
-.brand-word strong {
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-}
-
-.brand-word span {
-  font-size: 11px;
-  letter-spacing: 0.36em;
+.brand-logo {
+  display: block;
+  width: min(178px, 100%);
+  height: auto;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 14px 20px rgba(0, 0, 0, 0.38))
+    drop-shadow(0 0 8px rgba(243, 201, 104, 0.1));
 }
 
 .sidebar-section,
@@ -799,8 +769,8 @@ select:focus {
     padding: 12px;
   }
 
-  .brand-word strong {
-    font-size: 24px;
+  .brand-logo {
+    width: min(150px, 76vw);
   }
 
   .admin-hero h1 {

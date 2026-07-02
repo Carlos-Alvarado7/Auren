@@ -4,35 +4,17 @@
     <span class="corner corner-top-right" aria-hidden="true"></span>
     <span class="corner corner-bottom-left" aria-hidden="true"></span>
     <span class="corner corner-bottom-right" aria-hidden="true"></span>
+    <span class="frame-diamond frame-diamond-top" aria-hidden="true"></span>
+    <span class="frame-diamond frame-diamond-bottom" aria-hidden="true"></span>
 
     <header class="brand-header">
-      <div class="logo-crest" aria-hidden="true">
-        <svg viewBox="0 0 170 170" role="img" focusable="false">
-          <defs>
-            <linearGradient id="aurenGold" x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0%" stop-color="#fff1ba" />
-              <stop offset="28%" stop-color="#f2bf4d" />
-              <stop offset="58%" stop-color="#9b5c16" />
-              <stop offset="100%" stop-color="#ffeaa3" />
-            </linearGradient>
-          </defs>
-          <path class="crest-ring" d="M66 25c-27 11-43 39-35 67 9 33 43 51 76 41" />
-          <path class="crest-leaf" d="M51 23c16-14 26-8 31-1-15 2-24 8-31 1Z" />
-          <text class="crest-a-small" x="58" y="113">a</text>
-          <text class="crest-a-large" x="74" y="123">A</text>
-          <path class="crest-flame" d="M89 91c15 17 5 30-8 36 6-13-10-19 8-36Z" />
-        </svg>
-      </div>
-      <h1 class="brand-word" [attr.aria-label]="state.menu?.brandName || 'Áuren'">
-        <span class="brand-letter brand-letter-accent">Á</span>
-        <span class="brand-letter">U</span>
-        <span class="brand-letter">R</span>
-        <span class="brand-letter">E</span>
-        <span class="brand-letter">N</span>
-      </h1>
-      <p class="brand-subtitle" *ngIf="state.menu">
-        <span></span>{{ state.menu.subtitle }}<span></span>
-      </p>
+      <img
+        class="brand-logo"
+        src="/logo-auren.png"
+        alt="Auren Gastronomy"
+        decoding="async"
+        fetchpriority="high"
+      >
       <span class="brand-rule" aria-hidden="true"></span>
     </header>
 
