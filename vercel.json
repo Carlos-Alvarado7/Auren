@@ -5,8 +5,8 @@
   "outputDirectory": "Angular/dist/auren-menu/browser",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.ts"
+      "source": "/api/:path*",
+      "destination": "https://auren-7v7l.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
