@@ -20,7 +20,7 @@ export class PublicMenuController {
   constructor(private readonly menuService: MenuService) {}
 
   @Get(':slug')
-  @Header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400')
+  @Header('Cache-Control', 'public, max-age=0, must-revalidate')
   getPublicMenu(@Param('slug') slug: string): Promise<PublicMenuResponse> {
     return this.menuService.getPublicMenu(slug);
   }

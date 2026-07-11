@@ -25,16 +25,24 @@ export class MenuApiService {
 
   getPublicMenu(slug = PUBLIC_MENU_SLUG): Observable<PublicMenu> {
     const cachedMenu = this.getCachedPublicMenu(slug);
-    const remoteMenu$ = this.http.get<PublicMenu>(`${API_BASE_URL}/menu/${slug}`).pipe(
-      map(normalizePublicMenu),
-      tap((menu) => this.cachePublicMenu(slug, menu))
-    );
+    const remoteMenu$ = this.refreshPublicMenu(slug);
 
     if (!cachedMenu) {
       return remoteMenu$;
     }
 
     return concat(of(cachedMenu), remoteMenu$.pipe(catchError(() => EMPTY)));
+  }
+
+  refreshPublicMenu(slug = PUBLIC_MENU_SLUG): Observable<PublicMenu> {
+    return this.http
+      .get<PublicMenu>(`${API_BASE_URL}/menu/${slug}`, {
+        params: { fresh: String(Date.now()) }
+      })
+      .pipe(
+        map(normalizePublicMenu),
+        tap((menu) => this.cachePublicMenu(slug, menu))
+      );
   }
 
   getAdminMenu(): Observable<AdminMenu> {
@@ -88,7 +96,10 @@ export class MenuApiService {
   }
 
   publish(): Observable<AdminMenu> {
-    return this.http.post<AdminMenu>(`${API_BASE_URL}/admin/menu/publish`, {}).pipe(map(normalizeAdminMenu));
+    return this.http.post<AdminMenu>(`${API_BASE_URL}/admin/menu/publish`, {}).pipe(
+      map(normalizeAdminMenu),
+      tap(() => this.clearPublicMenuCache())
+    );
   }
 
   private getCachedPublicMenu(slug: string): PublicMenu | null {
@@ -124,5 +135,15 @@ export class MenuApiService {
 
   private getPublicMenuCacheKey(slug: string): string {
     return `${PUBLIC_MENU_CACHE_PREFIX}${slug}`;
+  }
+
+  private clearPublicMenuCache(): void {
+    try {
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith(PUBLIC_MENU_CACHE_PREFIX))
+        .forEach((key) => localStorage.removeItem(key));
+    } catch {
+      // Cache invalidation is best-effort; publishing still succeeds through the backend response.
+    }
   }
 }

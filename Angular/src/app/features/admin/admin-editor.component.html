@@ -30,8 +30,13 @@
           [class.active]="category.id === selectedCategoryId"
           (click)="selectCategory(category)"
         >
-          <span>{{ category.title }}</span>
-          <small>{{ category.products.length }} productos</small>
+          <span class="category-row-icon" aria-hidden="true">
+            <auren-category-icon-svg [icon]="category.icon || 'diamond'"></auren-category-icon-svg>
+          </span>
+          <span class="category-row-copy">
+            <span>{{ category.title }}</span>
+            <small>{{ category.products.length }} productos</small>
+          </span>
         </button>
       </section>
 
@@ -40,10 +45,26 @@
           Nombre de categoria
           <input name="categoryTitle" [(ngModel)]="categoryForm.title" required maxlength="100">
         </label>
-        <label>
-          Icono interno
-          <input name="categoryIcon" [(ngModel)]="categoryForm.icon" maxlength="60">
-        </label>
+        <div class="icon-picker-field">
+          <span class="field-label">Icono visible</span>
+          <button
+            class="icon-picker-trigger"
+            type="button"
+            (click)="openIconPicker()"
+            [attr.aria-expanded]="iconPickerOpen"
+            aria-haspopup="dialog"
+          >
+            <span class="icon-preview" aria-hidden="true">
+              <auren-category-icon-svg [icon]="selectedCategoryIconOption.value"></auren-category-icon-svg>
+            </span>
+            <span class="icon-picker-copy">
+              <strong>{{ selectedCategoryIconOption.label }}</strong>
+              <small>{{ selectedCategoryIconOption.description }}</small>
+            </span>
+            <span class="icon-picker-arrow" aria-hidden="true"></span>
+          </button>
+          <input type="hidden" name="categoryIcon" [(ngModel)]="categoryForm.icon">
+        </div>
         <label class="check-row">
           <input type="checkbox" name="categoryVisible" [(ngModel)]="categoryForm.visible">
           <span>Visible para clientes</span>
@@ -254,4 +275,38 @@
       </ng-container>
     </section>
   </section>
+
+  <div class="icon-picker-backdrop" *ngIf="iconPickerOpen" (click)="closeIconPicker()">
+    <section
+      class="icon-picker-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="iconPickerTitle"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="icon-picker-header">
+        <div>
+          <span>Icono de categoria</span>
+          <h2 id="iconPickerTitle">Seleccionar icono</h2>
+        </div>
+        <button class="ghost-button" type="button" (click)="closeIconPicker()">Cerrar</button>
+      </header>
+
+      <div class="icon-picker-grid">
+        <button
+          class="icon-option"
+          type="button"
+          *ngFor="let option of categoryIconOptions"
+          [class.active]="selectedCategoryIconOption.value === option.value"
+          (click)="selectCategoryIcon(option.value)"
+        >
+          <span class="icon-option-preview" aria-hidden="true">
+            <auren-category-icon-svg [icon]="option.value"></auren-category-icon-svg>
+          </span>
+          <strong>{{ option.label }}</strong>
+          <small>{{ option.description }}</small>
+        </button>
+      </div>
+    </section>
+  </div>
 </main>
