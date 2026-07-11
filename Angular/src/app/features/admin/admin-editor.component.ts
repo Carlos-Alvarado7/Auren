@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -11,9 +11,11 @@ import {
 } from '../../core/admin-product-state.util';
 import { formatAdminPriceInput, parseAdminPriceInput } from '../../core/admin-price-input.util';
 import { AuthService } from '../../core/auth.service';
+import { CATEGORY_ICON_OPTIONS, CategoryIconOption, getCategoryIconOption } from '../../core/category-icons';
 import { CopCurrencyPipe } from '../../core/cop-currency.pipe';
 import { MenuApiService } from '../../core/menu-api.service';
 import { AdminMenu, MenuCategory, MenuProduct, MenuVariant } from '../../core/menu.models';
+import { CategoryIconSvgComponent } from '../../shared/category-icon-svg.component';
 
 interface CategoryForm {
   id: string | null;
@@ -40,17 +42,19 @@ interface ProductTableRow {
 @Component({
   selector: 'auren-admin-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, CopCurrencyPipe],
+  imports: [CommonModule, FormsModule, CopCurrencyPipe, CategoryIconSvgComponent],
   templateUrl: './admin-editor.component.html',
   styleUrls: ['./admin-editor.component.css']
 })
 export class AdminEditorComponent implements OnInit {
+  readonly categoryIconOptions: readonly CategoryIconOption[] = CATEGORY_ICON_OPTIONS;
   menu: AdminMenu | null = null;
   selectedCategoryId = '';
   loading = true;
   saving = false;
   message = '';
   error = '';
+  iconPickerOpen = false;
   productCategoryFilterId = 'all';
   productStateFilter: AdminProductStateFilter = 'all';
   productSearch = '';
@@ -98,6 +102,15 @@ export class AdminEditorComponent implements OnInit {
 
       return matchesCategory && matchesSearch && matchesState;
     });
+  }
+
+  get selectedCategoryIconOption(): CategoryIconOption {
+    return getCategoryIconOption(this.categoryForm.icon);
+  }
+
+  @HostListener('document:keydown.escape')
+  closeIconPickerOnEscape(): void {
+    this.closeIconPicker();
   }
 
   loadMenu(): void {
@@ -202,6 +215,19 @@ export class AdminEditorComponent implements OnInit {
 
   newCategory(): void {
     this.categoryForm = this.emptyCategoryForm();
+  }
+
+  openIconPicker(): void {
+    this.iconPickerOpen = true;
+  }
+
+  closeIconPicker(): void {
+    this.iconPickerOpen = false;
+  }
+
+  selectCategoryIcon(icon: string): void {
+    this.categoryForm.icon = icon;
+    this.closeIconPicker();
   }
 
   saveCategory(): void {
@@ -319,33 +345,51 @@ export class AdminEditorComponent implements OnInit {
   }
 
   moveCategory(category: MenuCategory, direction: -1 | 1): void {
-    const reordered = moveItem(this.categories, category.id, direction);
+    if (!this.menu) {
+      return;
+    }
+
+    const previousMenu = clone(this.menu);
+    const reordered = withUpdatedSortOrder(moveItem(this.categories, category.id, direction));
+    if (hasSameOrder(this.categories, reordered)) {
+      return;
+    }
+
+    this.applyDraftCategories(reordered);
     this.persist(
       this.menuApiService.reorder({
-        categories: reordered.map((item, index) => ({ categoryId: item.id, sortOrder: (index + 1) * 10 }))
+        categories: reordered.map((item) => ({ categoryId: item.id, sortOrder: item.sortOrder }))
       }),
-      'Orden de categorías actualizado.'
+      'Orden de categorías actualizado.',
+      previousMenu
     );
   }
 
   moveProduct(product: MenuProduct, direction: -1 | 1): void {
     const category = this.selectedCategory;
-    if (!category) {
+    if (!this.menu || !category) {
       return;
     }
 
-    const reordered = moveItem(category.products, product.id, direction);
+    const previousMenu = clone(this.menu);
+    const reordered = withUpdatedSortOrder(moveItem(category.products, product.id, direction));
+    if (hasSameOrder(category.products, reordered)) {
+      return;
+    }
+
+    this.applyDraftProducts(category.id, reordered);
     this.persist(
       this.menuApiService.reorder({
         categoryId: category.id,
-        products: reordered.map((item, index) => ({ productId: item.id, sortOrder: (index + 1) * 10 }))
+        products: reordered.map((item) => ({ productId: item.id, sortOrder: item.sortOrder }))
       }),
-      'Orden de productos actualizado.'
+      'Orden de productos actualizado.',
+      previousMenu
     );
   }
 
   publish(): void {
-    this.persist(this.menuApiService.publish(), 'Carta publicada. Los clientes verán los cambios al recargar el QR.');
+    this.persist(this.menuApiService.publish(), 'Carta publicada. Los clientes verán los cambios automáticamente.');
   }
 
   logout(): void {
@@ -359,7 +403,11 @@ export class AdminEditorComponent implements OnInit {
     return item.id;
   }
 
-  private persist(request$: ReturnType<MenuApiService['getAdminMenu']>, successMessage: string): void {
+  private persist(
+    request$: ReturnType<MenuApiService['getAdminMenu']>,
+    successMessage: string,
+    rollbackMenu?: AdminMenu
+  ): void {
     this.saving = true;
     this.error = '';
     this.message = '';
@@ -371,6 +419,10 @@ export class AdminEditorComponent implements OnInit {
         this.saving = false;
       },
       error: () => {
+        if (rollbackMenu) {
+          this.applyMenu(rollbackMenu);
+        }
+
         this.error = 'La operación no pudo completarse. Revise los datos e intente de nuevo.';
         this.saving = false;
       }
@@ -395,6 +447,33 @@ export class AdminEditorComponent implements OnInit {
         visible: selected.visible ?? true
       };
     }
+  }
+
+  private applyDraftCategories(categories: MenuCategory[]): void {
+    if (!this.menu) {
+      return;
+    }
+
+    this.menu = {
+      ...this.menu,
+      draft: {
+        ...this.menu.draft,
+        categories
+      }
+    };
+  }
+
+  private applyDraftProducts(categoryId: string, products: MenuProduct[]): void {
+    this.applyDraftCategories(
+      this.categories.map((category) =>
+        category.id === categoryId
+          ? {
+              ...category,
+              products
+            }
+          : category
+      )
+    );
   }
 
   private emptyCategoryForm(): CategoryForm {
@@ -430,4 +509,15 @@ function moveItem<T extends { id: string }>(items: T[], itemId: string, directio
   const [item] = next.splice(index, 1);
   next.splice(targetIndex, 0, item);
   return next;
+}
+
+function withUpdatedSortOrder<T extends { sortOrder: number }>(items: T[]): T[] {
+  return items.map((item, index) => ({
+    ...item,
+    sortOrder: (index + 1) * 10
+  }));
+}
+
+function hasSameOrder<T extends { id: string }>(current: T[], next: T[]): boolean {
+  return current.length === next.length && current.every((item, index) => item.id === next[index]?.id);
 }

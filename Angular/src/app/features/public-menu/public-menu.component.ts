@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { Observable, catchError, map, of, startWith } from 'rxjs';
+import { EMPTY, Observable, catchError, concat, map, of, startWith, switchMap, timer } from 'rxjs';
 import { getCategoryPanelClass } from '../../core/category-panel-class.util';
 import { CopCurrencyPipe } from '../../core/cop-currency.pipe';
 import { MenuApiService } from '../../core/menu-api.service';
 import { PublicMenu } from '../../core/menu.models';
 import { shouldShowPrice } from '../../core/visible-price.util';
+import { CategoryIconSvgComponent } from '../../shared/category-icon-svg.component';
 
 interface MenuViewState {
   loading: boolean;
@@ -16,11 +17,12 @@ interface MenuViewState {
 @Component({
   selector: 'auren-public-menu',
   standalone: true,
-  imports: [CommonModule, CopCurrencyPipe],
+  imports: [CommonModule, CopCurrencyPipe, CategoryIconSvgComponent],
   templateUrl: './public-menu.component.html',
   styleUrls: ['./public-menu.component.css']
 })
 export class PublicMenuComponent implements OnInit {
+  private readonly publicMenuRefreshMs = 60_000;
   state$!: Observable<MenuViewState>;
   activeCategoryId = '';
   readonly shouldShowPrice = shouldShowPrice;
@@ -28,7 +30,12 @@ export class PublicMenuComponent implements OnInit {
   constructor(private readonly menuApiService: MenuApiService) {}
 
   ngOnInit(): void {
-    this.state$ = this.menuApiService.getPublicMenu().pipe(
+    const initialMenu$ = this.menuApiService.getPublicMenu();
+    const refreshMenu$ = timer(this.publicMenuRefreshMs, this.publicMenuRefreshMs).pipe(
+      switchMap(() => this.menuApiService.refreshPublicMenu().pipe(catchError(() => EMPTY)))
+    );
+
+    this.state$ = concat(initialMenu$, refreshMenu$).pipe(
       map((menu) => {
         if (!this.activeCategoryId) {
           this.activeCategoryId = menu.categories[0]?.id ?? '';
