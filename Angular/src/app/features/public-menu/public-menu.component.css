@@ -671,6 +671,63 @@
   letter-spacing: 0.08em;
 }
 
+.menu-address {
+  color: rgba(255, 248, 228, 0.78);
+  font-family: var(--font-menu);
+  font-size: clamp(16px, 2.2vw, 21px);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.whatsapp-fab {
+  position: fixed;
+  right: clamp(14px, 3vw, 28px);
+  bottom: clamp(14px, 3vw, 28px);
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 174, 47, 0.68);
+  background:
+    linear-gradient(145deg, rgba(4, 17, 31, 0.96), rgba(2, 11, 22, 0.88));
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 231, 166, 0.12),
+    0 10px 26px rgba(0, 0, 0, 0.45),
+    0 0 18px rgba(243, 201, 103, 0.16);
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.whatsapp-fab:hover,
+.whatsapp-fab:focus-visible {
+  transform: translateY(-2px);
+  color: #061527;
+  background: linear-gradient(135deg, #f7ce70, #b8731b);
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.5),
+    0 0 26px rgba(243, 201, 103, 0.32);
+}
+
+.whatsapp-fab svg {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+}
+
 @media (max-width: 860px) {
   .menu-shell {
     box-shadow: 0 22px 70px rgba(0, 0, 0, 0.45);
@@ -862,6 +919,18 @@
 
   .variant-list strong {
     justify-self: end;
+  }
+
+  .whatsapp-fab {
+    padding: 0;
+    width: 56px;
+    height: 56px;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .whatsapp-fab-label {
+    display: none;
   }
 }
 
